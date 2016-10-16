@@ -66,9 +66,7 @@ def main():
             # Add delay time to delay time list
             dt_list.append(dt)
 
-    model_vector = modelVector(dt_list, station_list, event_list, d_ij)
-
-    return model_vector
+    return modelVector(dt_list, station_list, event_list, d_ij)
 
 def modelVector(dt_list, station_list, event_list, d_ij):
     # Get length of the lists
@@ -101,12 +99,8 @@ def modelVector(dt_list, station_list, event_list, d_ij):
     except LinAlgError:
         gTg_inv = la.pinv(gT_mult_g)
 
-    # 
     model_vector = np.matmul(gTg_inv, gT_mult_dt)
-
-    # return model_vector
     return np.matmul(g_matrix, model_vector)
-
 
 def createParser():
     # Add cmd line argument for choosing directory
