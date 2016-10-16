@@ -1,2 +1,2 @@
 # earthquake
-Earthquake analysis scripts for a seismology lab at Northwestern University
+Seismological events analysis scripts for a seismology lab at Northwestern University
