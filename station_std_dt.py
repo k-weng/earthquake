@@ -26,17 +26,19 @@ def main():
                     stations[station_name][1].append(std)
                     stations[station_name][2].append(delay_time)
 
-    for station in stations.keys():
-        output_filename = options.ext + "_stations_data/" + station + ".stdmean.of.stddelay." + now.strftime("%Y%m%d") + ".txt"
-        if not os.path.exists(os.path.dirname(output_filename)):
+    output_dir = options.ext + "_stations_data/"
+    if not os.path.exists(output_dir):
             try:
-                os.mkdir(os.path.dirname(output_filename))
+                os.mkdir(output_dir)
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
 
+    for station in stations.keys():
+        filename = output_dir + station + ".stdmean.of.stddelay." + now.strftime("%Y%m%d") + ".txt"
+
         col_names = "filename,\tstd,\tdelay_times\n"
-        with open(output_filename, 'w') as f:
+        with open(filename, 'w') as f:
             f.write("Created on " + now.strftime("%b %d, %Y %H:%M") + '\n')
             f.write(col_names)
 

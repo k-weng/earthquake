@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.linalg as la
+import errno
 from numpy.linalg import LinAlgError
 from argparse import ArgumentParser
 import os
@@ -12,16 +13,16 @@ def main():
     folder_name = options.ext + "_stations_data"
 
     # Initialize lists
-    station_list = []
-    event_list = []
-    dt_list = []
+    stations = []
+    events = []
+    dtimes = []
 
     # Index variables for station and event indexes
     i = -1
     j = 0
 
     # Dictionary with delay time keys and values with corresponding station and event indexes
-    d_ij = {}
+    dtimes_ij = {}
 
     # Access each station file
     for filename in os.listdir(folder_name):
@@ -34,7 +35,7 @@ def main():
         # Get station name and append to station list
         station = ".".join(file[:2])
         i += 1
-        station_list.append(station)
+        stations.append(station)
 
         # Read events of station
         for line in open(folder_name + "/" + filename):
@@ -49,44 +50,60 @@ def main():
             dt = float(line_list[2])
 
             # Check if event in event list
-            for e in range(len(event_list)):
+            for e in range(len(events)):
 
-                # If event in event list, j is the index of the event in the list already
-                if (event_list[e] == event):
+                # If event in event list, j is the index of the event in the list
+                if (events[e] == event):
                     j = e
 
             # If event not in event list, append event to the list and j is the index of the event
-            if event not in event_list:
-                event_list.append(event)
-                j = len(event_list) - 1
+            if event not in events:
+                events.append(event)
+                j = len(events) - 1
 
             # Add delay time and corresponding (i, j) to dictionary
-            d_ij[dt] = (i, j)
+            dtimes_ij[dt] = (i, j)
 
             # Add delay time to delay time list
-            dt_list.append(dt)
+            dtimes.append(dt)
 
-    return modelVector(dt_list, station_list, event_list, d_ij)
+    m = modelVector(dtimes, stations, events, dtimes_ij)
 
-def modelVector(dt_list, station_list, event_list, d_ij):
+    # Check if output folder already exists, and if not create it
+    output_dir = options.ext + "_analysis_outputs/"
+    if not os.path.exists(output_dir):
+        try:
+            os.mkdir(output_dir)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+
+    # Write lists to separate files
+    header = output_dir + options.ext
+    writeVector(header + "_model_vector.txt", m)
+    writeVector(header + "_stations.txt", np.array(stations))
+    writeVector(header + "_events.txt", np.array(events))
+    writeDict(header + "_dtimes.txt", dtimes_ij)
+
+def modelVector(dtimes, stations, events, dtimes_ij):
     # Get length of the lists
-    k = len(dt_list)
-    n = len(station_list)
-    m = len(event_list)
+    k = len(dtimes)
+    n = len(stations)
+    m = len(events)
 
     # Change delay time list into a numpy vector
-    dt_vector = np.array(dt_list)
+    dt_vector = np.array(dtimes)
 
     # Create the matrix G with k rows and n + m columns and fill with zeros
     g_dims = (k, n + m)
     g_matrix = np.zeros(g_dims)
 
     # Populate matrix G for each delay time row
-    for d in range(len(dt_list)):
+    for d in range(len(dtimes)):
 
         # Set G(d, i) and G(d, n + j) to 1
-        g_matrix[d, d_ij[dt_list[d]][0]] = 1
-        g_matrix[d, n + d_ij[dt_list[d]][1]] = 1
+        g_matrix[d, dtimes_ij[dtimes[d]][0]] = 1
+        g_matrix[d, n + dtimes_ij[dtimes[d]][1]] = 1
 
     # Solve for model vector m in equation Gm = d where d is the vector of delay times
     # To solve, m = (G^T * G)^(-1) * G^T * d
@@ -102,6 +119,19 @@ def modelVector(dt_list, station_list, event_list, d_ij):
     model_vector = np.matmul(gTg_inv, gT_mult_dt)
     return np.matmul(g_matrix, model_vector)
 
+def writeVector(filename, vector):
+    with open(filename, 'w') as f:
+        for val in np.nditer(vector):
+            output = str(val) + "\n"
+            f.write(output)
+
+def writeDict(filename, dict):
+    with open(filename, 'w') as f:
+        f.write("dtimes\tstation i\tevent j\n")
+        for dt in dict:
+            output = "%s\t%s\t%s\n" % (dt, dict[dt][0], dict[dt][1])
+            f.write(output)
+
 def createParser():
     # Add cmd line argument for choosing directory
     parser = ArgumentParser()
@@ -113,4 +143,4 @@ def createParser():
     return parser
 
 if __name__ == '__main__':
-    print main()
+    main()
