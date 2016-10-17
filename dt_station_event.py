@@ -22,6 +22,7 @@ def main():
     j = 0
 
     # Dictionary with delay time keys and values with corresponding station and event indexes
+    # Example: dtimes[-0.1234] => (25, 10) - station at index 25 of stations and event at index 10 of events 
     dtimes_ij = {}
 
     # Access each station file
@@ -47,7 +48,7 @@ def main():
 
             # Get event name and corresponding delay time
             event = line_list[0] if len(line_list) == 3 else " ".join(line_list[:2])
-            dt = float(line_list[2])
+            dt = float(line_list[2]) if len(line_list) == 3 else float(line_list[3])
 
             # Check if event in event list
             for e in range(len(events)):
@@ -108,7 +109,6 @@ def modelVector(dtimes, stations, events, dtimes_ij):
     # Solve for model vector m in equation Gm = d where d is the vector of delay times
     # To solve, m = (G^T * G)^(-1) * G^T * d
     gT_mult_g = np.matmul(g_matrix.transpose(), g_matrix)
-    gT_mult_dt = np.matmul(g_matrix.transpose(), dt_vector)
 
     # If (G^T * G) is singular and non-invertible, find the pseudoinverse
     try:
@@ -116,8 +116,9 @@ def modelVector(dtimes, stations, events, dtimes_ij):
     except LinAlgError:
         gTg_inv = la.pinv(gT_mult_g)
 
-    model_vector = np.matmul(gTg_inv, gT_mult_dt)
-    return np.matmul(g_matrix, model_vector)
+    gT_mult_dt = np.matmul(g_matrix.transpose(), dt_vector)
+
+    return np.matmul(gTg_inv, gT_mult_dt)
 
 def writeVector(filename, vector):
     with open(filename, 'w') as f:
