@@ -5,6 +5,8 @@ from numpy.linalg import LinAlgError
 from argparse import ArgumentParser
 import os
 
+# NOTE: If jlist and ilist are desired, uncomment lines 23, 24, 48, 81, 104, 105
+
 def main():
     parser = createParser()
     options = parser.parse_args()
@@ -16,6 +18,9 @@ def main():
     stations = []
     events = []
     dtimes = []
+    # If necessary, uncomment the two lines below for ilist and jlist
+    # ilist = []
+    # jlist = []
 
     # Index variables for station and event indexes
     i = -1
@@ -35,8 +40,11 @@ def main():
 
         # Get station name and append to station list
         station = ".".join(file[:2])
-        i += 1
         stations.append(station)
+
+        i += 1
+        # Add i into ilist, if necessary uncomment line below
+        # ilist.append(i)
 
         # Read events of station
         for line in open(folder_name + "/" + filename):
@@ -68,6 +76,11 @@ def main():
             # Add delay time to delay time list
             dtimes.append(dt)
 
+            # Add j into jlist, if necessary uncomment line below
+            # jlist.append(j)
+
+        
+
     m = modelVector(dtimes, stations, events, dtimes_ij)
 
     # Check if output folder already exists, and if not create it
@@ -82,9 +95,14 @@ def main():
     # Write lists to separate files
     header = output_dir + options.ext
     writeVector(header + "_model_vector.txt", m)
-    writeVector(header + "_stations.txt", np.array(stations))
-    writeVector(header + "_events.txt", np.array(events))
+    writeList(header + "_stations.txt", stations)
+    writeList(header + "_events.txt", events)
     writeDict(header + "_dtimes.txt", dtimes_ij)
+
+    # If ilist and jlist are desired, uncomment next two lines below
+    # writeList(header + "_ilist.txt", ilist)
+    # writeList(header + "_jlist.txt", jlist)
+
 
 def modelVector(dtimes, stations, events, dtimes_ij):
     # Get length of the lists
@@ -131,6 +149,12 @@ def writeDict(filename, dict):
         f.write("dtimes\tstation i\tevent j\n")
         for dt in dict:
             output = "%s\t%s\t%s\n" % (dt, dict[dt][0], dict[dt][1])
+            f.write(output)
+
+def writeList(filename, list):
+    with open(filename, 'w') as f:
+        for val in list:
+            output = str(val) + "\n"
             f.write(output)
 
 def createParser():
